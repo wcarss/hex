@@ -12,7 +12,7 @@
       canvas.height = window.innerHeight;
       clearAllIntervals();
       enclosedSplort = encloseSplort(splort, context);
-      splortInterval = setInterval(enclosedSplort, 660);
+      splortInterval = setInterval(enclosedSplort, 125);
       setPalette(randomSelection(palettes));
     });
     let context = canvas.getContext("2d");
@@ -29,6 +29,35 @@
     let randomSelection = function(array) {
         return array[randomNumber(array.length)];
       };
+    let get_key = function(a, b) {
+      return `${a},${b}`;
+    };
+    let regen = function() {
+      let x_step = 26, y_step = 30,
+          x_size = 21, y_size = 21,
+          x_count = parseInt(Math.round(canvas.width/x_step)),
+          y_count = parseInt(Math.round(canvas.height/y_step)),
+          x_offset = 1, y_offset = 1,
+          x_inc = 0, y_inc = 0;
+
+      let color = getPalette()[1];
+      if (x_count % 2) x_count++;
+      if (y_count % 2) y_count++;
+      for (x_inc = -x_count; x_inc < x_count; x_inc++) {
+        for (y_inc = -y_count; y_inc < y_count; y_inc++) {
+          let key = get_key(x_inc, y_inc);
+          cells[key] = color;
+          if (saved[key]) {
+            cells[key] = saved[key];
+            delete saved[key];
+          }
+          if (randomNumber(100) > 85) {
+            saved[key] = cells[key];
+            cells[key] = randomSelection(getPalette());
+          }
+        }
+      }
+    };
     let splort = function(graphics, palette) {
         let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
@@ -36,20 +65,14 @@
           y_count = parseInt(Math.round(canvas.height/y_step)),
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
-
-        rotation+=Math.PI/180*3;
-
-        //graphics.clearRect(-x_step*x_count*2, -y_step*y_count*2, x_step*x_count*2, y_step*y_count*2);
+        rotation+=Math.PI/180*0.5;
         graphics.setTransform(1,0,0,1,canvas.width/2,canvas.height/2);
         graphics.rotate(rotation);
-        graphics.fillStyle = randomSelection(getPalette());
         if (x_count % 2) x_count++;
         if (y_count % 2) y_count++;
         for (x_inc = -x_count; x_inc < x_count; x_inc++) {
           for (y_inc = -y_count; y_inc < y_count; y_inc++) {
-            if (randomNumber(100) > 75) {
-              graphics.fillStyle = randomSelection(getPalette());
-            }
+            graphics.fillStyle = cells[get_key(x_inc, y_inc)];
             let x = x_inc * x_step + x_offset;
             let y = y_inc * y_step + y_offset;
             if (x_inc % 2) {
@@ -64,16 +87,8 @@
             graphics.lineTo(x-10, y-15);
             graphics.closePath();
             graphics.fill();
-            
-            //graphics.fillRect(
-            //  x_inc * x_step + x_offset,
-            //  y_inc * y_step + y_offset,
-            //  x_size,
-            //  y_size
-            //);
           }
         }
-
       };
     let encloseSplort = function(fn, context, palette) {
           return function() {
@@ -110,9 +125,12 @@
 
     //setPalette(generatePalette(3));
     rotation=0;
+    cells = {};
+    saved = {};
     
     enclosedSplort = encloseSplort(splort, context);
-    splortInterval = setInterval(enclosedSplort, 150);
+    splortInterval = setInterval(enclosedSplort, 330);
+    regenInterval = setInterval(regen, 1500);
     //paletteInterval = setInterval(newGlobalPalette(), 1400);
     //context.fillStyle = randomSelection(getPalette());
     //clearAllIntervals();
@@ -318,6 +336,7 @@
 ["#F2E8C4","#98D9B6","#3EC9A7","#2B879E","#616668"],
 ["#5CACC4","#8CD19D","#CEE879","#FCB653","#FF5254"]];
     setPalette(randomSelection(palettes));
+    regen();
 </script>
 </body>
 </html>
