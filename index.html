@@ -12,7 +12,8 @@
       canvas.height = window.innerHeight;
       clearAllIntervals();
       enclosedSplort = encloseSplort(splort, context);
-      splortInterval = setInterval(enclosedSplort, 125);
+      splortInterval = setInterval(enclosedSplort, 30);
+      regenInterval = setInterval(regen, 250);
       setPalette(randomSelection(palettes));
     });
     let context = canvas.getContext("2d");
@@ -32,11 +33,11 @@
     let get_key = function(a, b) {
       return `${a},${b}`;
     };
-    let regen = function() {
+    let gen = function() {
       let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
-          x_count = parseInt(Math.round(canvas.width/x_step)),
-          y_count = parseInt(Math.round(canvas.height/y_step)),
+          x_count = parseInt(Math.round(canvas.width/x_step))*4,
+          y_count = parseInt(Math.round(canvas.height/y_step))*4,
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
 
@@ -47,12 +48,30 @@
         for (y_inc = -y_count; y_inc < y_count; y_inc++) {
           let key = get_key(x_inc, y_inc);
           cells[key] = color;
-          if (saved[key]) {
-            cells[key] = saved[key];
-            delete saved[key];
+        }
+      }
+    };
+
+    let regen = function() {
+      let x_step = 26, y_step = 30,
+          x_size = 21, y_size = 21,
+          x_count = parseInt(Math.round(canvas.width/x_step))*4,
+          y_count = parseInt(Math.round(canvas.height/y_step))*4,
+          x_offset = 1, y_offset = 1,
+          x_inc = 0, y_inc = 0;
+
+      let color = getPalette()[1];
+      if (x_count % 2) x_count++;
+      if (y_count % 2) y_count++;
+      for (x_inc = -x_count; x_inc < x_count; x_inc++) {
+        for (y_inc = -y_count; y_inc < y_count; y_inc++) {
+          let key = get_key(x_inc, y_inc);
+          if (randomNumber(100) > 35 && cells[key] !== color) {
+            let x_dir_choice = randomNumber(3)-1;
+            let y_dir_choice = randomNumber(3)-1;
+            cells[get_key(x_inc+x_dir_choice, y_inc+y_dir_choice)] = cells[key];
           }
-          if (randomNumber(100) > 85) {
-            saved[key] = cells[key];
+          if (randomNumber(1000) > 998) {
             cells[key] = randomSelection(getPalette());
           }
         }
@@ -61,12 +80,12 @@
     let splort = function(graphics, palette) {
         let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
-          x_count = parseInt(Math.round(canvas.width/x_step)),
-          y_count = parseInt(Math.round(canvas.height/y_step)),
+          x_count = parseInt(Math.round(canvas.width/x_step))*4,
+          y_count = parseInt(Math.round(canvas.height/y_step))*4,
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
-        rotation+=Math.PI/180*0.5;
-        graphics.setTransform(1,0,0,1,canvas.width/2,canvas.height/2);
+        rotation+=Math.PI/180*1;
+        graphics.setTransform(0.25,0,0,0.25,canvas.width/2,canvas.height/2);
         graphics.rotate(rotation);
         if (x_count % 2) x_count++;
         if (y_count % 2) y_count++;
@@ -129,8 +148,8 @@
     saved = {};
     
     enclosedSplort = encloseSplort(splort, context);
-    splortInterval = setInterval(enclosedSplort, 330);
-    regenInterval = setInterval(regen, 1500);
+    splortInterval = setInterval(enclosedSplort, 30);
+    regenInterval = setInterval(regen, 250);
     //paletteInterval = setInterval(newGlobalPalette(), 1400);
     //context.fillStyle = randomSelection(getPalette());
     //clearAllIntervals();
@@ -336,6 +355,7 @@
 ["#F2E8C4","#98D9B6","#3EC9A7","#2B879E","#616668"],
 ["#5CACC4","#8CD19D","#CEE879","#FCB653","#FF5254"]];
     setPalette(randomSelection(palettes));
+    gen();
     regen();
 </script>
 </body>
