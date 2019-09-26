@@ -11,6 +11,8 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       clearAllIntervals();
+      gen();
+//      saved = {};
       enclosedSplort = encloseSplort(splort, context);
       splortInterval = setInterval(enclosedSplort, 30);
       regenInterval = setInterval(regen, 250);
@@ -36,8 +38,9 @@
     let gen = function() {
       let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
-          x_count = parseInt(Math.round(canvas.width/x_step))*4,
-          y_count = parseInt(Math.round(canvas.height/y_step))*4,
+          max = Math.max(canvas.width, canvas.height),
+          x_count = parseInt(Math.round(max/x_step)),
+          y_count = parseInt(Math.round(max/y_step)),
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
 
@@ -47,51 +50,75 @@
       for (x_inc = -x_count; x_inc < x_count; x_inc++) {
         for (y_inc = -y_count; y_inc < y_count; y_inc++) {
           let key = get_key(x_inc, y_inc);
-          cells[key] = color;
+          if (!cells[key]) {
+            cells[key] = { color: color, x: x_inc, y: y_inc };
+          }
         }
       }
     };
 
     let regen = function() {
+      //console.log('regening');
       let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
-          x_count = parseInt(Math.round(canvas.width/x_step))*4,
-          y_count = parseInt(Math.round(canvas.height/y_step))*4,
+          max = Math.max(canvas.width, canvas.height),
+          x_count = parseInt(Math.round(max/x_step)),
+          y_count = parseInt(Math.round(max/y_step)),
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
 
       let color = getPalette()[1];
       if (x_count % 2) x_count++;
       if (y_count % 2) y_count++;
-      for (x_inc = -x_count; x_inc < x_count; x_inc++) {
-        for (y_inc = -y_count; y_inc < y_count; y_inc++) {
-          let key = get_key(x_inc, y_inc);
-          if (randomNumber(100) > 35 && cells[key] !== color) {
-            let x_dir_choice = randomNumber(3)-1;
-            let y_dir_choice = randomNumber(3)-1;
-            cells[get_key(x_inc+x_dir_choice, y_inc+y_dir_choice)] = cells[key];
-          }
-          if (randomNumber(1000) > 998) {
-            cells[key] = randomSelection(getPalette());
-          }
+      for (key in saved) {
+        //console.log(key);
+        //let x = randomNumber(x_count*2)-x_count;
+        //let y = randomNumber(y_count*2)-y_count;
+        //let key = get_key(x, y);
+        let x_dir_choice = randomNumber(3)-1;
+        let y_dir_choice = randomNumber(3)-1;
+        let old_x = cells[key].x;
+        let old_y = cells[key].y;
+        let new_cell = cells[get_key(old_x+x_dir_choice, old_y+y_dir_choice)];
+        if (new_cell) {
+          //console.log('color: ', cells[key].color);
+          new_cell.color = cells[key].color;
         }
+        y_dir_choice = randomNumber(2)-1;
+        let new_cell2 = cells[get_key(old_x+x_dir_choice, old_y+y_dir_choice)];
+        if (new_cell2) {
+          new_cell2.color = cells[key].color;
+        }
+      }
+      for (let i = 0; i < 60; i++) {
+        let x = randomNumber(x_count*2)-x_count;
+        let y = randomNumber(y_count*2)-y_count;
+        let key = get_key(x, y);
+        cells[key].color = randomSelection(getPalette());
+        saved[key] = cells[key];
       }
     };
     let splort = function(graphics, palette) {
         let x_step = 26, y_step = 30,
           x_size = 21, y_size = 21,
-          x_count = parseInt(Math.round(canvas.width/x_step))*4,
-          y_count = parseInt(Math.round(canvas.height/y_step))*4,
+          max = Math.max(canvas.width, canvas.height),
+          x_count = parseInt(Math.round(max/x_step)),
+          y_count = parseInt(Math.round(max/y_step)),
           x_offset = 1, y_offset = 1,
           x_inc = 0, y_inc = 0;
-        rotation+=Math.PI/180*1;
-        graphics.setTransform(0.25,0,0,0.25,canvas.width/2,canvas.height/2);
+        rotation+=(Math.PI/180)*rotation_velocity;
+        if (rotation > 4 || rotation < 0) rotation_velocity *= -1;
+        x_skew += x_skew_velocity;
+        y_skew += y_skew_velocity;
+        if (x_skew > 0.1 || x_skew < -0.1) x_skew_velocity *= -1;
+        if (y_skew > 0.1 || y_skew < -0.1) y_skew_velocity *= -1;
+        graphics.setTransform(0.8,x_skew,y_skew,0.8,canvas.width/2,canvas.height/2);
         graphics.rotate(rotation);
         if (x_count % 2) x_count++;
         if (y_count % 2) y_count++;
         for (x_inc = -x_count; x_inc < x_count; x_inc++) {
           for (y_inc = -y_count; y_inc < y_count; y_inc++) {
-            graphics.fillStyle = cells[get_key(x_inc, y_inc)];
+            graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
             let x = x_inc * x_step + x_offset;
             let y = y_inc * y_step + y_offset;
             if (x_inc % 2) {
@@ -144,6 +171,11 @@
 
     //setPalette(generatePalette(3));
     rotation=0;
+    x_skew = 0.2;
+    y_skew = 0;
+    x_skew_velocity = 0.002;
+    y_skew_velocity = 0.002;
+    rotation_velocity = 0.5;
     cells = {};
     saved = {};
     
@@ -357,6 +389,7 @@
     setPalette(randomSelection(palettes));
     gen();
     regen();
+    console.log(cells);
 </script>
 </body>
 </html>
