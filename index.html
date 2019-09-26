@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
-<body style="margin: 0; padding: 0; border: 0;">
-<canvas style="margin: 0; padding: 0; border: 0; display: block;" id="canvas"></canvas>
+<body style="margin: 0; padding: 0; border: 0; cursor: none; touch-action: none;">
+<canvas onclick=onclick style="margin: 0; padding: 0; border: 0; display: block;" id="canvas"></canvas>
 
 <script>
     let canvas = document.getElementById("canvas");
@@ -15,9 +15,58 @@
 //      saved = {};
       enclosedSplort = encloseSplort(splort, context);
       splortInterval = setInterval(enclosedSplort, 30);
-      regenInterval = setInterval(regen, 250);
+      regenInterval = setInterval(regen, 400);
+      //regenBrushInterval = setInterval(brushRegen, 1000);
       setPalette(randomSelection(palettes));
     });
+    let clicking = false;
+    let ondown = function () {
+      clicking = true;
+      brushRegen();
+    };
+    let onup = function () {
+      clicking = false;
+    }
+    let onmove = function(e) {
+      if (clicking) onclick(e);
+    }
+    let onclick = function(e) {
+      let x_step = 26, y_step = 30,
+          x_size = 21, y_size = 21,
+          max = Math.max(canvas.width, canvas.height),
+          x_count = parseInt(Math.round(max/x_step)),
+          y_count = parseInt(Math.round(max/y_step));
+      if (x_count % 2) x_count++;
+      if (y_count % 2) y_count++;
+      //console.log('x_count, y_count: ', x_count, ', ', y_count);
+      const event_x = e.clientX+max/2;
+      const event_y = e.clientY+max/2;
+      //console.log('event_x, event_y: ', event_x, ', ', event_y);
+      let x_denom = (x_step*0.8*(1+x_skew));
+      let y_denom = (y_step*0.8*(1+y_skew));
+      //console.log('x_denom, y_denom: ', x_denom, ', ', y_denom);
+      let x_dist = event_x / x_denom;
+      let y_dist = event_y / y_denom;
+      //console.log('x_dist, y_dist: ', x_dist, ', ', y_dist);
+      let x = parseInt(Math.round(x_dist-x_count));
+      let y = parseInt(Math.round(y_dist-y_count));
+      //console.log('x, y: ', x, ', ', y);
+      //let color1 = randomSelection(getPalette());
+      //let color2 = randomSelection(getPalette());
+      //cells[get_key(x-1, y-1)].color = brushColor1;
+      cells[get_key(x-1, y)].color = brushColor1;
+      cells[get_key(x-1, y+1)].color = brushColor1;
+      cells[get_key(x, y-1)].color = brushColor1;
+      cells[get_key(x, y)].color = brushColor1; 
+      cells[get_key(x, y+1)].color = brushColor1;
+      cells[get_key(x+1, y-1)].color = brushColor1;
+      cells[get_key(x+1, y)].color = brushColor1;
+      //cells[get_key(x+1, y+1)].color = brushColor1;
+    };
+    canvas.addEventListener('pointerdown', ondown);
+    canvas.addEventListener('pointerup', onup);
+    canvas.addEventListener('pointermove', onmove);
+    canvas.addEventListener('click', onclick)
     let context = canvas.getContext("2d");
     let palette = null, palettes = [["#69D2E7","#A7DBD8","#E0E4CC","#F38630","#FA6900"]];
     let randomNumber = function(max) {
@@ -56,7 +105,10 @@
         }
       }
     };
-
+    let brushRegen = function () {
+      brushColor1 = randomSelection(getPalette());
+      brushColor2 = randomSelection(getPalette());
+    };
     let regen = function() {
       //console.log('regening');
       let x_step = 26, y_step = 30,
@@ -175,13 +227,14 @@
     y_skew = 0;
     x_skew_velocity = 0.002;
     y_skew_velocity = 0.002;
-    rotation_velocity = 0.5;
+    rotation_velocity = 0.05;
     cells = {};
     saved = {};
     
     enclosedSplort = encloseSplort(splort, context);
     splortInterval = setInterval(enclosedSplort, 30);
-    regenInterval = setInterval(regen, 250);
+    regenInterval = setInterval(regen, 400);
+    //regenBrushInterval = setInterval(brushRegen, 1000);
     //paletteInterval = setInterval(newGlobalPalette(), 1400);
     //context.fillStyle = randomSelection(getPalette());
     //clearAllIntervals();
