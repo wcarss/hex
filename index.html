@@ -1,6 +1,6 @@
 <!doctype html>
 <html>
-<body style="margin: 0; padding: 0; border: 0; cursor: none; touch-action: none;">
+<body style="margin: 0; padding: 0; border: 0; cursor: auto; touch-action: none;">
 <canvas onclick=onclick style="margin: 0; padding: 0; border: 0; display: block;" id="canvas"></canvas>
 
 <script>
@@ -31,7 +31,7 @@
       if (clicking) onclick(e);
     }
     let onclick = function(e) {
-      let x_step = 26, y_step = 30,
+      let x_step = 24, y_step = 28,
           x_size = 21, y_size = 21,
           max = Math.max(canvas.width, canvas.height),
           x_count = parseInt(Math.round(max/x_step)),
@@ -39,28 +39,33 @@
       if (x_count % 2) x_count++;
       if (y_count % 2) y_count++;
       //console.log('x_count, y_count: ', x_count, ', ', y_count);
-      const event_x = e.clientX+max/2;
-      const event_y = e.clientY+max/2;
+      const event_x = e.clientX;//+max/2;
+      const event_y = e.clientY;//+max/2;
+      const radius = Math.sqrt(event_x*event_x+event_y*event_y);
+      const current_angle = Math.acos(event_x/radius);
+      //console.log('current angle: ', current_angle);
+      const rot_x = radius*Math.cos((current_angle-rotation));//*Math.sqrt(event_x*event_x+event_y*event_y);
+      const rot_y = radius*Math.sin((current_angle-rotation));//*Math.sqrt(event_x*event_x+event_y*event_y);
       //console.log('event_x, event_y: ', event_x, ', ', event_y);
-      let x_denom = (x_step*0.8*(1+x_skew));
-      let y_denom = (y_step*0.8*(1+y_skew));
+      let x_denom = x_step; //(x_step*(1+x_skew));
+      let y_denom = y_step; //(y_step*0.75*(1+y_skew));
       //console.log('x_denom, y_denom: ', x_denom, ', ', y_denom);
-      let x_dist = event_x / x_denom;
-      let y_dist = event_y / y_denom;
+      let x_dist = rot_x / x_denom;
+      let y_dist = rot_y / y_denom;
       //console.log('x_dist, y_dist: ', x_dist, ', ', y_dist);
-      let x = parseInt(Math.round(x_dist-x_count));
-      let y = parseInt(Math.round(y_dist-y_count));
+      let x = parseInt(Math.round(x_dist));
+      let y = parseInt(Math.round(y_dist));
       //console.log('x, y: ', x, ', ', y);
       //let color1 = randomSelection(getPalette());
       //let color2 = randomSelection(getPalette());
       //cells[get_key(x-1, y-1)].color = brushColor1;
-      cells[get_key(x-1, y)].color = brushColor1;
-      cells[get_key(x-1, y+1)].color = brushColor1;
-      cells[get_key(x, y-1)].color = brushColor1;
-      cells[get_key(x, y)].color = brushColor1; 
-      cells[get_key(x, y+1)].color = brushColor1;
-      cells[get_key(x+1, y-1)].color = brushColor1;
-      cells[get_key(x+1, y)].color = brushColor1;
+      //cells[get_key(x-1, y)].color = brushColor1;
+      //cells[get_key(x-1, y+1)].color = brushColor1;
+      //cells[get_key(x, y-1)].color = brushColor1;
+      cells[get_key(x, y)].color = "blue"; 
+      //cells[get_key(x, y+1)].color = brushColor1;
+      //cells[get_key(x+1, y-1)].color = brushColor1;
+      //cells[get_key(x+1, y)].color = brushColor1;
       //cells[get_key(x+1, y+1)].color = brushColor1;
     };
     canvas.addEventListener('pointerdown', ondown);
@@ -85,7 +90,7 @@
       return `${a},${b}`;
     };
     let gen = function() {
-      let x_step = 26, y_step = 30,
+      let x_step = 24, y_step = 28,
           x_size = 21, y_size = 21,
           max = Math.max(canvas.width, canvas.height),
           x_count = parseInt(Math.round(max/x_step)),
@@ -96,8 +101,8 @@
       let color = getPalette()[1];
       if (x_count % 2) x_count++;
       if (y_count % 2) y_count++;
-      for (x_inc = -x_count; x_inc < x_count; x_inc++) {
-        for (y_inc = -y_count; y_inc < y_count; y_inc++) {
+      for (x_inc = 0; x_inc <= x_count; x_inc++) {
+        for (y_inc = 0; y_inc <= y_count; y_inc++) {
           let key = get_key(x_inc, y_inc);
           if (!cells[key]) {
             cells[key] = { color: color, x: x_inc, y: y_inc };
@@ -111,7 +116,7 @@
     };
     let regen = function() {
       //console.log('regening');
-      let x_step = 26, y_step = 30,
+      let x_step = 24, y_step = 28,
           x_size = 21, y_size = 21,
           max = Math.max(canvas.width, canvas.height),
           x_count = parseInt(Math.round(max/x_step)),
@@ -143,15 +148,15 @@
         }
       }
       for (let i = 0; i < 60; i++) {
-        let x = randomNumber(x_count*2)-x_count;
-        let y = randomNumber(y_count*2)-y_count;
+        let x = randomNumber(x_count);
+        let y = randomNumber(y_count);
         let key = get_key(x, y);
         cells[key].color = randomSelection(getPalette());
         saved[key] = cells[key];
       }
     };
     let splort = function(graphics, palette) {
-        let x_step = 26, y_step = 30,
+        let x_step = 24, y_step = 28,
           x_size = 21, y_size = 21,
           max = Math.max(canvas.width, canvas.height),
           x_count = parseInt(Math.round(max/x_step)),
@@ -164,25 +169,26 @@
         y_skew += y_skew_velocity;
         if (x_skew > 0.1 || x_skew < -0.1) x_skew_velocity *= -1;
         if (y_skew > 0.1 || y_skew < -0.1) y_skew_velocity *= -1;
-        graphics.setTransform(0.8,x_skew,y_skew,0.8,canvas.width/2,canvas.height/2);
+        //graphics.setTransform(0.8,x_skew,y_skew,0.8,canvas.width/2,canvas.height/2);
+        graphics.setTransform(1,x_skew,y_skew,1,0, 0);//canvas.width/2,canvas.height/2);
         graphics.rotate(rotation);
         if (x_count % 2) x_count++;
         if (y_count % 2) y_count++;
-        for (x_inc = -x_count; x_inc < x_count; x_inc++) {
-          for (y_inc = -y_count; y_inc < y_count; y_inc++) {
+        for (x_inc = 0; x_inc <= x_count; x_inc++) {
+          for (y_inc = 0; y_inc <= y_count; y_inc++) {
             graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
-            let x = x_inc * x_step + x_offset;
-            let y = y_inc * y_step + y_offset;
+            let x = x_inc * x_step;
+            let y = y_inc * y_step;
             if (x_inc % 2) {
-              y -= 15;   
+              y -= 14;   
             }
             graphics.beginPath();
             graphics.moveTo(x-16, y);
-            graphics.lineTo(x-10, y+15);
-            graphics.lineTo(x+10, y+15);
+            graphics.lineTo(x-8, y+14);
+            graphics.lineTo(x+8, y+14);
             graphics.lineTo(x+16, y);
-            graphics.lineTo(x+10, y-15);
-            graphics.lineTo(x-10, y-15);
+            graphics.lineTo(x+8, y-14);
+            graphics.lineTo(x-8, y-14);
             graphics.closePath();
             graphics.fill();
           }
@@ -222,12 +228,16 @@
       };
 
     //setPalette(generatePalette(3));
-    rotation=0;
-    x_skew = 0.2;
+    rotation=0.0;
+    x_skew = 0.0;
+    //x_skew = 0.2;
     y_skew = 0;
-    x_skew_velocity = 0.002;
-    y_skew_velocity = 0.002;
-    rotation_velocity = 0.05;
+    x_skew_velocity = 0;
+    //x_skew_velocity = 0.002;
+    y_skew_velocity = 0;
+    //y_skew_velocity = 0.002;
+    //rotation_velocity = 0.05;
+    rotation_velocity = 0.01;
     cells = {};
     saved = {};
     
