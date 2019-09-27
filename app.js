@@ -20,6 +20,17 @@ let splortInterval = null;
 let regenInterval = null;
 let rotated = false;
 
+let x_step = 24;
+let y_step = 28;
+let x_size = 21;
+let y_size = 21;
+let x_offset = 1;
+let y_offset = 1;
+let max = null;
+let min = null;
+let x_count = null;
+let y_count = null;
+
 let ondown = function() {
   clicking = true;
   brushRegen();
@@ -34,15 +45,6 @@ let onmove = function(e) {
 };
 
 let onclick = function(e) {
-  let x_step = 24,
-    y_step = 28,
-    x_size = 21,
-    y_size = 21,
-    max = Math.max(canvas.width, canvas.height),
-    x_count = parseInt(Math.round(canvas.width / x_step)),
-    y_count = parseInt(Math.round(canvas.height / y_step));
-  if (x_count % 2) x_count++;
-  if (y_count % 2) y_count++;
   //console.log('x_count, y_count: ', x_count, ', ', y_count);
   const event_x = e.clientX - canvas.width / 2; //+max/2;
   const event_y = e.clientY - canvas.height / 2; //+max/2;
@@ -100,21 +102,10 @@ let get_key = function(a, b) {
 };
 
 let gen = function() {
-  let x_step = 24,
-    y_step = 28,
-    x_size = 21,
-    y_size = 21,
-    max = Math.max(canvas.width, canvas.height),
-    x_count = parseInt(Math.round(canvas.width / x_step)),
-    y_count = parseInt(Math.round(canvas.height / y_step)),
-    x_offset = 1,
-    y_offset = 1,
-    x_inc = 0,
-    y_inc = 0;
-
+  let x_inc = 0;
+  let y_inc = 0;
   let color = getPalette()[1];
-  if (x_count % 2) x_count++;
-  if (y_count % 2) y_count++;
+
   for (x_inc = 0; x_inc <= x_count; x_inc++) {
     for (y_inc = 0; y_inc <= y_count; y_inc++) {
       let key = get_key(x_inc, y_inc);
@@ -132,19 +123,10 @@ let brushRegen = function() {
 
 let regen = function() {
   //console.log('regening');
-  let x_step = 24,
-    y_step = 28,
-    x_size = 21,
-    y_size = 21,
-    max = Math.max(canvas.width, canvas.height),
-    x_count = parseInt(Math.round(canvas.width / x_step)),
-    y_count = parseInt(Math.round(canvas.height / y_step)),
-    x_offset = 1,
-    y_offset = 1,
-    x_inc = 0,
-    y_inc = 0;
-
+  let x_inc = 0;
+  let y_inc = 0;
   let color = getPalette()[1];
+
   if (x_count % 2) x_count++;
   if (y_count % 2) y_count++;
   for (const key in saved) {
@@ -177,18 +159,8 @@ let regen = function() {
 };
 
 let splort = function(graphics, palette) {
-  let x_step = 24,
-    y_step = 28,
-    x_size = 21,
-    y_size = 21,
-    max = Math.max(canvas.width, canvas.height),
-    min = Math.min(canvas.width, canvas.height),
-    x_count = parseInt(Math.round(canvas.width / x_step)),
-    y_count = parseInt(Math.round(canvas.height / y_step)),
-    x_offset = 1,
-    y_offset = 1,
-    x_inc = 0,
-    y_inc = 0;
+  let x_inc = 0;
+  let y_inc = 0;
   if (rotation > 4 || rotation < 0) rotation_velocity *= -1;
   x_skew += x_skew_velocity;
   y_skew += y_skew_velocity;
@@ -274,6 +246,12 @@ window.onload = () => {
   canvas.addEventListener("click", onclick);
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  max = Math.max(canvas.width, canvas.height);
+  min = Math.min(canvas.width, canvas.height);
+  x_count = parseInt(Math.round(canvas.width / x_step));
+  y_count = parseInt(Math.round(canvas.height / y_step));
+  if (x_count % 2) x_count++;
+  if (y_count % 2) y_count++;
   context = canvas.getContext("2d");
   enclosedSplort = encloseSplort(splort, context);
   splortInterval = setInterval(enclosedSplort, 30);
@@ -288,6 +266,12 @@ window.onload = () => {
 window.addEventListener("resize", function() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  max = Math.max(canvas.width, canvas.height);
+  min = Math.min(canvas.width, canvas.height);
+  x_count = parseInt(Math.round(canvas.width / x_step));
+  y_count = parseInt(Math.round(canvas.height / y_step));
+  if (x_count % 2) x_count++;
+  if (y_count % 2) y_count++;
   clearAllIntervals();
   gen();
   //      saved = {};
