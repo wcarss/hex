@@ -5,10 +5,10 @@ let context = null;
 let brushColor1 = null;
 let brushColor2 = null;
 let rotation = 0.0;
-let x_skew = 0.0;
+let x_skew = 0.3;
 let y_skew = 0;
-let x_skew_velocity = 0;
-let y_skew_velocity = 0;
+let x_skew_velocity = 0.001;
+let y_skew_velocity = 0.001;
 let rotation_velocity = 0.05;
 let cells = {};
 let saved = {};
@@ -161,21 +161,53 @@ let regen = function() {
 let splort = function(graphics, palette) {
   let x_inc = 0;
   let y_inc = 0;
+
+  //graphics.setTransform(0.8,x_skew,y_skew,0.8,canvas.width/2,canvas.height/2);
+
+  //console.log("before any: ", graphics.getTransform());
+  //graphics.setTransform(1, x_skew, y_skew, 1, 0, 0);
+  //graphics.transform(0, -x_skew, -y_skew, 0, 0, 0);
+  const currentTransform = graphics.getTransform();
+  graphics.setTransform(1, 0, 0, 1, 0, 0);
+  graphics.clearRect(0, 0, canvas.width, canvas.height);
+
+  graphics.setTransform(
+    currentTransform.a,
+    currentTransform.b - x_skew,
+    currentTransform.c - y_skew,
+    currentTransform.d,
+    currentTransform.e,
+    currentTransform.f
+  );
+  graphics.translate(canvas.width / 2, canvas.height / 2);
+  graphics.rotate(-rotation); //graphics.setTransform(1,x_skew,y_skew,1,0,0);
+  //console.log("after reset: ", graphics.getTransform());
+  rotation += (Math.PI / 180) * rotation_velocity;
   if (rotation > 4 || rotation < 0) rotation_velocity *= -1;
   x_skew += x_skew_velocity;
   y_skew += y_skew_velocity;
-  if (x_skew > 0.1 || x_skew < -0.1) x_skew_velocity *= -1;
-  if (y_skew > 0.1 || y_skew < -0.1) y_skew_velocity *= -1;
-  //graphics.setTransform(0.8,x_skew,y_skew,0.8,canvas.width/2,canvas.height/2);
-  graphics.translate(canvas.width / 2, canvas.height / 2);
-  graphics.rotate(-rotation); //graphics.setTransform(1,x_skew,y_skew,1,0,0);
-  rotation += (Math.PI / 180) * rotation_velocity;
+  if (x_skew > 0.5 || x_skew < 0.1) x_skew_velocity *= -1;
+  if (y_skew > 0.2 || y_skew < -0.2) y_skew_velocity *= -1;
+  //graphics.transform(0, x_skew, y_skew, 0, 0, 0);
   graphics.rotate(rotation);
+
   //if(!rotated) {
   //graphics.rotate(rotation);
   //  rotated = true;
   // }
   graphics.translate(-canvas.width / 2, -canvas.height / 2);
+  const laterTransform = graphics.getTransform();
+  graphics.setTransform(
+    laterTransform.a,
+    laterTransform.b + x_skew,
+    laterTransform.c + y_skew,
+    laterTransform.d,
+    laterTransform.e,
+    laterTransform.f
+  );
+  //console.log("after re-mess: ", graphics.getTransform());
+
+  //graphics.skew(x_skew, y_skew);
   //graphics.setTransform(1,x_skew,y_skew,1,0,0);
   if (x_count % 2) x_count++;
   if (y_count % 2) y_count++;
