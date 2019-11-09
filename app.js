@@ -4,12 +4,14 @@ let clicking = false;
 let context = null;
 let brushColor1 = null;
 let brushColor2 = null;
+let brushColor1Index = null;
+let brushColor2Index = null;
 let rotation = 0;
 let x_skew = 0;
 let y_skew = 0;
 let x_skew_velocity = 0.001;
-let y_skew_velocity = 0.0005;
-let rotation_velocity = 0.3; //.1;
+let y_skew_velocity = 0.001;
+let rotation_velocity = 0.3 * (Math.PI / 180); //.1;
 let cells = {};
 let saved = {};
 
@@ -17,15 +19,13 @@ let palette = null;
 let canvas = null;
 let enclosedSplort = null;
 let splortInterval = null;
+let paletteChangeInterval = null;
+let clearBoardInterval = null;
 let regenInterval = null;
 let rotated = false;
 
 let x_step = 24;
 let y_step = 28;
-let x_size = 21;
-let y_size = 21;
-let x_offset = 1;
-let y_offset = 1;
 let max = null;
 let min = null;
 let x_count = null;
@@ -84,6 +84,25 @@ let onclick = function(event, graphics, canvas) {
   x = x_count / 2 + parseInt(Math.round(x / x_step));
   y = y_count / 2 + parseInt(Math.round(y / y_step));
 
+  cells[get_key(x - 3, y - 1)].color = brushColor1;
+  cells[get_key(x - 4, y)].color = brushColor1;
+  cells[get_key(x - 2, y + 1)].color = brushColor1;
+  cells[get_key(x, y - 1)].color = brushColor1;
+  cells[get_key(x, y)].color = brushColor1;
+  cells[get_key(x, y + 1)].color = brushColor1;
+  cells[get_key(x + 3, y - 1)].color = brushColor1;
+  cells[get_key(x + 2, y)].color = brushColor1;
+  cells[get_key(x + 4, y + 1)].color = brushColor1;
+  cells[get_key(x - 3, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x - 4, y)].color_index = brushColor1Index;
+  cells[get_key(x - 2, y + 1)].color_index = brushColor1Index;
+  cells[get_key(x, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x, y)].color_index = brushColor1Index;
+  cells[get_key(x, y + 1)].color_index = brushColor1Index;
+  cells[get_key(x + 3, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x + 2, y)].color_index = brushColor1Index;
+  cells[get_key(x + 4, y + 1)].color_index = brushColor1Index;
+
   cells[get_key(x - 1, y - 1)].color = brushColor1;
   cells[get_key(x - 1, y)].color = brushColor1;
   cells[get_key(x - 1, y + 1)].color = brushColor1;
@@ -93,6 +112,15 @@ let onclick = function(event, graphics, canvas) {
   cells[get_key(x + 1, y - 1)].color = brushColor1;
   cells[get_key(x + 1, y)].color = brushColor1;
   cells[get_key(x + 1, y + 1)].color = brushColor1;
+  cells[get_key(x - 1, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x - 1, y)].color_index = brushColor1Index;
+  cells[get_key(x - 1, y + 1)].color_index = brushColor1Index;
+  cells[get_key(x, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x, y)].color_index = brushColor1Index;
+  cells[get_key(x, y + 1)].color_index = brushColor1Index;
+  cells[get_key(x + 1, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x + 1, y)].color_index = brushColor1Index;
+  cells[get_key(x + 1, y + 1)].color_index = brushColor1Index;
 };
 
 let randomNumber = function(max) {
@@ -114,30 +142,53 @@ let get_key = function(a, b) {
   return `${a},${b}`;
 };
 
-let gen = function() {
+let gen = function(refresh = false) {
   let x_inc = 0;
   let y_inc = 0;
-  let color = getPalette()[1];
+  let palette = getPalette();
+  let default_color = palette[1];
+  let color = default_color;
+  let color_index = 1;
 
   for (x_inc = 0; x_inc <= x_count; x_inc++) {
     for (y_inc = 0; y_inc <= y_count; y_inc++) {
       let key = get_key(x_inc, y_inc);
+      if (Math.random() > 0.28) {
+        color_index = randomNumber(palette.length);
+        color = palette[color_index];
+      }
       if (!cells[key]) {
-        cells[key] = { color: color, x: x_inc, y: y_inc };
+        cells[key] = {
+          color: default_color,
+          color_index: 1,
+          x: x_inc,
+          y: y_inc
+        };
+      }
+      if (refresh) {
+        //cells[key].new_color = color;
+        //celld[key].new_color_index = color_index % palette.length;
+        cells[key].color_index = cells[key].color_index % palette.length;
+        cells[key].new_color = palette[cells[key].color_index];
       }
     }
   }
 };
 
 let brushRegen = function() {
-  brushColor1 = randomSelection(getPalette());
-  brushColor2 = randomSelection(getPalette());
+  let palette = getPalette();
+  brushColor1Index = randomNumber(palette.length);
+  brushColor2Index = randomNumber(palette.length);
+  brushColor1 = palette[brushColor1Index];
+  brushColor2 = palette[brushColor2Index];
 };
 
 let regen = function() {
   let x_inc = 0;
   let y_inc = 0;
-  let color = getPalette()[1];
+  let palette = getPalette();
+  let default_color = palette[1];
+  let color = default_color;
 
   for (const key in saved) {
     let x_dir_choice = randomNumber(3) - 1;
@@ -146,19 +197,22 @@ let regen = function() {
     let old_y = cells[key].y;
     let new_cell = cells[get_key(old_x + x_dir_choice, old_y + y_dir_choice)];
     if (new_cell) {
+      new_cell.color_index = cells[key].color_index % palette.length;
       new_cell.color = cells[key].color;
     }
     y_dir_choice = randomNumber(2) - 1;
-    let new_cell2 = cells[get_key(old_x + x_dir_choice, old_y + y_dir_choice)];
-    if (new_cell2) {
-      new_cell2.color = cells[key].color;
-    }
+    //let new_cell2 = cells[get_key(old_x + x_dir_choice, old_y + y_dir_choice)];
+    //if (new_cell2) {
+    //  new_cell2.color = cells[key].color;
+    //  new_cell2.color_index = cells[key].color_index % palette.length;
+    // }
   }
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 40; i++) {
     let x = randomNumber(x_count);
     let y = randomNumber(y_count);
     let key = get_key(x, y);
-    cells[key].color = randomSelection(getPalette());
+    cells[key].color_index = randomNumber(palette.length);
+    cells[key].color = palette[cells[key].color_index];
     saved[key] = cells[key];
   }
 };
@@ -182,11 +236,11 @@ let splort = function(graphics, palette) {
   graphics.translate(max, max);
   graphics.rotate(-rotation);
 
-  rotation += (Math.PI / 180) * rotation_velocity;
+  rotation += rotation_velocity;
   if (rotation > 6 || rotation < 0) rotation_velocity *= -1;
   x_skew += x_skew_velocity;
   y_skew += y_skew_velocity;
-  if (x_skew > 0.1 || x_skew < -0.1) x_skew_velocity *= -1;
+  if (x_skew > 0.25 || x_skew < -0.1) x_skew_velocity *= -1;
   if (y_skew > 0.1 || y_skew < -0.05) y_skew_velocity *= -1;
 
   graphics.rotate(rotation);
@@ -209,6 +263,26 @@ let splort = function(graphics, palette) {
       let y = y_inc * y_step;
       if (x_inc % 2) {
         y -= 14;
+      }
+      if (cells[get_key(x_inc, y_inc)].new_color) {
+        let cell = cells[get_key(x_inc, y_inc)];
+        let new_color = cell.new_color;
+        let new_x = x_inc;
+        let new_y = y_inc;
+        delete cells[get_key(new_x, new_y)].new_color;
+        setTimeout(() => {
+          graphics.fillStyle = new_color;
+          graphics.beginPath();
+          graphics.moveTo(x - 16, y);
+          graphics.lineTo(x - 8, y + 14);
+          graphics.lineTo(x + 8, y + 14);
+          graphics.lineTo(x + 16, y);
+          graphics.lineTo(x + 8, y - 14);
+          graphics.lineTo(x - 8, y - 14);
+          graphics.closePath();
+          graphics.fill();
+          cells[get_key(new_x, new_y)].color = new_color;
+        }, randomNumber(2000) + 50);
       }
       graphics.beginPath();
       graphics.moveTo(x - 16, y);
@@ -267,6 +341,14 @@ let getPalette = function() {
   return palette;
 };
 
+let changePalettes = function() {
+  setPalette(randomSelection(palettes));
+};
+
+let clearBoard = function() {
+  gen(true);
+};
+
 window.onload = () => {
   canvas = document.getElementById("canvas");
   canvas.addEventListener("pointerdown", ondown);
@@ -277,8 +359,6 @@ window.onload = () => {
   min = Math.min(canvas.width, canvas.height);
   x_count = parseInt(Math.round(max / x_step)) * 2;
   y_count = parseInt(Math.round(max / y_step)) * 2;
-  if (x_count % 2) x_count++;
-  if (y_count % 2) y_count++;
   context = canvas.getContext("2d");
   context.translate(-max / 2, -max / 2);
   canvas.addEventListener("click", enclosedClick(onclick, context, canvas));
@@ -288,10 +368,11 @@ window.onload = () => {
   );
   enclosedSplort = encloseSplort(splort, context);
   splortInterval = setInterval(enclosedSplort, 30);
-  regenInterval = setInterval(regen, 400);
+  regenInterval = setInterval(regen, 700);
+  paletteChangeInterval = setInterval(changePalettes, 29500);
+  clearBoardInterval = setInterval(clearBoard, 30000);
   setPalette(randomSelection(palettes));
   gen();
-  regen();
   //clearAllIntervals();
 };
 
@@ -303,13 +384,15 @@ window.addEventListener("resize", function() {
   x_count = parseInt(Math.round(max / x_step)) * 2;
   y_count = parseInt(Math.round(max / y_step)) * 2;
   context.translate(-max / 2, -max / 2);
-  if (x_count % 2) x_count++;
-  if (y_count % 2) y_count++;
-  clearAllIntervals();
+  clearInterval(splortInterval);
+  //clearAllIntervals();
   gen();
   enclosedSplort = encloseSplort(splort, context);
   splortInterval = setInterval(enclosedSplort, 30);
-  regenInterval = setInterval(regen, 400);
+  //regenInterval = setInterval(regen, 1000);
+  //paletteChangeInterval = setInterval(changePalettes, 30000);
+  //clearBoardInterval = setInterval(clearBoard, 60000);
+  //setInterval(changePalettes, 30000);
   //regenBrushInterval = setInterval(brushRegen, 1000);
-  setPalette(randomSelection(palettes));
+  //setPalette(randomSelection(palettes));
 });
