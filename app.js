@@ -22,7 +22,7 @@ let y_skew_max = 0.2 - Math.random() * 0.1;
 let zoom = 1;
 let zoom_velocity = Math.random() > 0.5 ? 0.0015 : -0.0015;
 let zoom_min = 0.75 + Math.random() * 0.5;
-let zoom_max = 2.7 - Math.random();
+let zoom_max = 2.2 - Math.random() * 1.5;
 let zoom_slowdown = 0.12;
 
 let cells = {};
@@ -230,7 +230,7 @@ let splort = function(graphics) {
   }
   if (zoom > zoom_max || zoom < zoom_min) {
     zoom_velocity *= -1;
-    zoom_max = 2.7 - Math.random() * 1.5;
+    zoom_max = 2.2 - Math.random() * 1.5;
     zoom_min = 0.65 + Math.random() * 0.5;
   }
 
