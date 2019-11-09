@@ -75,92 +75,24 @@ let onclick = function(event, graphics, canvas) {
   const { a, b, c, d, e, f } = graphics.getTransform();
   const event_x = event.clientX - max * 0.5;
   const event_y = event.clientY - max * 0.5;
-  //const event_x = event.clientX + max; // - max * 0.5;
-  //const event_y = event.clientY + max; // - max * 0.5;
-
-  const radius = Math.sqrt(event_x * event_x + event_y * event_y);
-  const x_sign = event_x > 0 ? 1 : -1;
-  const y_sign = event_y > 0 ? 1 : -1;
-  //const current_angle_x = Math.acos(x / radius);
-  //const current_angle_y = Math.asin(y / radius);
-  const current_angle_tan = Math.atan2(event_y, event_x);
-  //console.log('x angle: ', current_angle_x*(180/Math.PI));
-  //console.log("tan angle: ", current_angle_tan * (180 / Math.PI));
-  //console.log('current angle: ', current_angle);
-  const rot_x = radius * Math.cos(current_angle_tan - rotation); //*Math.sqrt(event_x*event_x+event_y*event_y);
-  const rot_y = radius * Math.sin(current_angle_tan - rotation); //*Math.sqrt(event_x*event_x+event_y*event_y);
 
   let { x, y } = vecmatrix(
     { x: event_x, y: event_y },
-    inversematrix({
-      a,
-      b, //(b * event_x) / canvas.width,
-      c, //(c * event_y) / canvas.height,
-      d
-    })
+    inversematrix({ a, b, c, d })
   );
-  // console.log(
-  //   `transform! a: ${a}, b: ${b}, c: ${c}, d: ${d}, e: ${e}, f: ${f}`
-  // );
-  console.log(`transform! x: ${x}, y: ${y}`);
-  //
-  //x = x + e;
-  //y = y + f;
-  //console.log('x_count, y_count: ', x_count, ', ', y_count);
-  //const event_x = e.clientX - max * 0.75; // - x_skew * (canvas.height / 2 - e.clientY); //+max/2;
-  //const event_y = e.clientY - max / 2; // - y_skew * (canvas.width / 2 - e.clientX); //+max/2;
 
-  const skew_rot_x = rot_x - ((x_skew * canvas.height) / 2 - rot_y);
-  const skew_rot_y = rot_y - ((y_skew * canvas.width) / 2 - rot_x);
-  //console.log('event_x, event_y: ', event_x, ', ', event_y);
-  let x_denom = x_step; //(x_step*(1+x_skew));
-  let y_denom = y_step; //(y_step*0.75*(1+y_skew));
-  //console.log('x_denom, y_denom: ', x_denom, ', ', y_denom);
-  let x_dist = x / x_denom; // + ((canvas.height - rot_y) / y_denom) * x_skew;
-  let y_dist = y / y_denom;
-  //console.log('x_dist, y_dist: ', x_dist, ', ', y_dist);
-  x = parseInt(Math.round(x_dist));
-  //let x = parseInt(
-  //  Math.round(x_dist - x_skew * (y_count / 2 - Math.round(y_dist)))
-  //);
-  y = parseInt(Math.round(y_dist));
-  //console.log('x, y: ', x, ', ', y);
-  //let color1 = randomSelection(getPalette());
-  //let color2 = randomSelection(getPalette());
-  //cells[get_key(x - 1, y - 1)].color = brushColor1;
-  console.log(
-    `fully transformed: x, y: ${x_count / 2 + x},${y_count / 2 +
-      y} -- of x_count,y_count ${x_count},${y_count}`
-  );
-  // console.log(
-  //   `fully transformed: x, y: ${x},${y} -- of x_count,y_count ${x_count},${y_count}`
-  // );
-  cells[get_key(x_count / 2 + x - 1, y_count / 2 + y)].color = brushColor1;
-  cells[get_key(x_count / 2 + x - 1, y_count / 2 + y + 1)].color = brushColor1;
-  cells[get_key(x_count / 2 + x, y_count / 2 + y - 1)].color = brushColor1;
-  cells[get_key(x_count / 2 + x, y_count / 2 + y)].color = brushColor1; //randomSelection([
-  // //  "blue",
-  // //  "green"
-  // //]);
-  // //cells[
-  // //  get_key(
-  // //    x_count / 2 + x - parseInt(Math.round(x_skew * (y_count / 2 - y))),
-  // //    y_count / 2 + y
-  // //  )
-  // //].color = "black";
-  cells[get_key(x_count / 2 + x, y_count / 2 + y + 1)].color = brushColor1;
-  cells[get_key(x_count / 2 + x + 1, y_count / 2 + y - 1)].color = brushColor1;
-  cells[get_key(x_count / 2 + x + 1, y_count / 2 + y)].color = brushColor1;
-  cells[get_key(x_count / 2 + x, y_count / 2 + y)].color = brushColor1;
+  x = x_count / 2 + parseInt(Math.round(x / x_step));
+  y = y_count / 2 + parseInt(Math.round(y / y_step));
+
+  cells[get_key(x - 1, y - 1)].color = brushColor1;
+  cells[get_key(x - 1, y)].color = brushColor1;
+  cells[get_key(x - 1, y + 1)].color = brushColor1;
+  cells[get_key(x, y - 1)].color = brushColor1;
   cells[get_key(x, y)].color = brushColor1;
-  //cells[get_key(x_count / 2 + x - 1, y_count / 2 + y)].color = brushColor1;
-  // cells[get_key(x - 1, y + 1)].color = brushColor1;
-  // cells[get_key(x, y - 1)].color = brushColor1;
-  // cells[get_key(x, y)].color = brushColor1;
-  // cells[get_key(x, y + 1)].color = brushColor1;
-  // cells[get_key(x + 1, y - 1)].color = brushColor1;
-  // cells[get_key(x + 1, y)].color = brushColor1;
-  // cells[get_key(x + 1, y + 1)].color = brushColor1;
+  cells[get_key(x, y + 1)].color = brushColor1;
+  cells[get_key(x + 1, y - 1)].color = brushColor1;
+  cells[get_key(x + 1, y)].color = brushColor1;
+  cells[get_key(x + 1, y + 1)].color = brushColor1;
 };
 
 let randomNumber = function(max) {
@@ -207,20 +139,13 @@ let regen = function() {
   let y_inc = 0;
   let color = getPalette()[1];
 
-  //if (x_count % 2) x_count++;
-  //if (y_count % 2) y_count++;
   for (const key in saved) {
-    //console.log(key);
-    //let x = randomNumber(x_count*2)-x_count;
-    //let y = randomNumber(y_count*2)-y_count;
-    //let key = get_key(x, y);
     let x_dir_choice = randomNumber(3) - 1;
     let y_dir_choice = randomNumber(3) - 1;
     let old_x = cells[key].x;
     let old_y = cells[key].y;
     let new_cell = cells[get_key(old_x + x_dir_choice, old_y + y_dir_choice)];
     if (new_cell) {
-      //console.log('color: ', cells[key].color);
       new_cell.color = cells[key].color;
     }
     y_dir_choice = randomNumber(2) - 1;
@@ -260,7 +185,6 @@ let splort = function(graphics, palette) {
   rotation += (Math.PI / 180) * rotation_velocity;
   if (rotation > 6 || rotation < 0) rotation_velocity *= -1;
   x_skew += x_skew_velocity;
-  //console.log(x_skew);
   y_skew += y_skew_velocity;
   if (x_skew > 0.1 || x_skew < -0.1) x_skew_velocity *= -1;
   if (y_skew > 0.1 || y_skew < -0.05) y_skew_velocity *= -1;
@@ -278,8 +202,6 @@ let splort = function(graphics, palette) {
     laterTransform.f
   );
 
-  //if (x_count % 2) x_count++;
-  //if (y_count % 2) y_count++;
   for (x_inc = 0; x_inc <= x_count; x_inc++) {
     for (y_inc = 0; y_inc <= y_count; y_inc++) {
       graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
@@ -378,8 +300,8 @@ window.addEventListener("resize", function() {
   canvas.height = window.innerHeight;
   max = Math.max(canvas.width, canvas.height);
   min = Math.min(canvas.width, canvas.height);
-  x_count = parseInt(Math.round(max / x_step)) * 2.5;
-  y_count = parseInt(Math.round(max / y_step)) * 2.5;
+  x_count = parseInt(Math.round(max / x_step)) * 2;
+  y_count = parseInt(Math.round(max / y_step)) * 2;
   context.translate(-max / 2, -max / 2);
   if (x_count % 2) x_count++;
   if (y_count % 2) y_count++;
