@@ -16,14 +16,22 @@ let y_skew = 0;
 let x_skew_velocity = Math.random() > 0.5 ? 0.0025 : -0.0025;
 let y_skew_velocity = Math.random() > 0.5 ? 0.0015 : -0.0015;
 let x_skew_min = -0.18 + Math.random() * 0.15;
-let x_skew_max = 0.32 - Math.random() * 0.1;
+let x_skew_max = 0.28 - Math.random() * 0.1;
 let y_skew_min = -0.3 + Math.random() * 0.15;
 let y_skew_max = 0.2 - Math.random() * 0.1;
 let zoom = 1;
 let zoom_velocity = Math.random() > 0.5 ? 0.0015 : -0.0015;
 let zoom_min = 0.75 + Math.random() * 0.5;
-let zoom_max = 2.2 - Math.random() * 1.5;
+let zoom_max = 2.0 - Math.random() * 1.5;
 let zoom_slowdown = 0.12;
+let zoom_change = 0;
+let new_graphics_type = null;
+let puke_x = 0;
+let puke_y = 0;
+let graphics_type = 0;
+// 0 - hex
+// 1 - squares
+// 2 - puke squares
 
 let cells = {};
 let saved = {};
@@ -131,6 +139,23 @@ let gen = function(refresh = false) {
   let y_inc = 0;
   if (refresh) {
     changePalettes();
+    let choice = Math.random();
+    if (
+      (graphics_type === 0 && choice > 0.5) ||
+      (graphics_type === 1 && choice > 0.4) ||
+      (graphics_type === 2 && choice > 0.2)
+    ) {
+      new_graphics_type = randomSelection([0, 0, 0, 0, 0, 0, 1, 1, 2]);
+      if (new_graphics_type === 2) {
+        puke_x = x_step - randomNumber(x_step);
+        puke_y = y_step - randomNumber(y_step);
+        zoom_out = true;
+      }
+      setTimeout(() => {
+        graphics_type = new_graphics_type;
+        new_graphics_type = null;
+      }, 1000);
+    }
   }
   let palette = getPalette();
   let default_color = palette[1];
@@ -183,10 +208,10 @@ let regen = function() {
     let new_cell = cells[get_key(old_x + x_dir_choice, old_y + y_dir_choice)];
     if (new_cell && !new_cell.new_color) {
       new_cell.color_index = cells[key].color_index % palette.length;
-      new_cell.color = cells[key].color;
+      new_cell.color = palette[new_cell.color_index];
     }
   }
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < randomNumber(100) + 15; i++) {
     let x = randomNumber(x_count);
     let y = randomNumber(y_count);
     let key = get_key(x, y);
@@ -223,29 +248,24 @@ let splort = function(graphics) {
     y_skew_max = 0.17 - Math.random() * 0.1;
     y_skew_min = -0.2 + Math.random() * 0.15;
   }
-  if (zoom > zoom_max - zoom_slowdown || zoom < zoom_min + zoom_slowdown) {
-    zoom += zoom_velocity * 0.5;
-  } else {
-    zoom += zoom_velocity;
-  }
   if (zoom > zoom_max || zoom < zoom_min) {
     zoom_velocity *= -1;
     zoom_max = 2.2 - Math.random() * 1.5;
     zoom_min = 0.65 + Math.random() * 0.5;
   }
+  if (zoom > zoom_max - zoom_slowdown || zoom < zoom_min + zoom_slowdown) {
+    zoom_change = zoom_velocity * 0.5;
+  } else {
+    zoom_change = zoom_velocity;
+  }
+  zoom += zoom_change;
 
   graphics.rotate(rotation_velocity);
   graphics.transform(
-    1 +
-      (zoom > zoom_max - zoom_slowdown || zoom < zoom_min - zoom_slowdown
-        ? zoom_velocity * 0.5
-        : zoom_velocity),
+    1 + zoom_change,
     y_skew_velocity,
     x_skew_velocity,
-    1 +
-      (zoom > zoom_max - zoom_slowdown || zoom < zoom_min - zoom_slowdown
-        ? zoom_velocity * 0.5
-        : zoom_velocity),
+    1 + zoom_change,
     0,
     0
   );
@@ -255,7 +275,7 @@ let splort = function(graphics) {
     for (y_inc = 0; y_inc <= y_count; y_inc++) {
       let x = x_inc * x_step;
       let y = y_inc * y_step;
-      if (x_inc % 2) {
+      if (graphics_type === 0 && x_inc % 2) {
         y -= 14;
       }
       if (cells[get_key(x_inc, y_inc)].new_color) {
@@ -264,8 +284,47 @@ let splort = function(graphics) {
         let new_x = x_inc;
         let new_y = y_inc;
         delete cells[get_key(new_x, new_y)].new_color;
+        cells[get_key(new_x, new_y)].waiting = true;
         setTimeout(() => {
           graphics.fillStyle = new_color;
+          let local_graphics_type =
+            new_graphics_type !== null ? new_graphics_type : graphics_type;
+          if (local_graphics_type === 1) {
+            graphics.fillRect(x + 12, y + 12, x_step - 12, y_step - 12);
+          } else if (local_graphics_type === 2) {
+            graphics.fillRect(
+              x + puke_x,
+              y + puke_y,
+              x_step - puke_x,
+              y_step - puke_y
+            );
+          } else {
+            graphics.beginPath();
+            graphics.moveTo(x - 16, y);
+            graphics.lineTo(x - 8, y + 14);
+            graphics.lineTo(x + 8, y + 14);
+            graphics.lineTo(x + 16, y);
+            graphics.lineTo(x + 8, y - 14);
+            graphics.lineTo(x - 8, y - 14);
+            graphics.closePath();
+            graphics.fill();
+          }
+          cells[get_key(new_x, new_y)].color = new_color;
+          delete cells[get_key(new_x, new_y)].waiting;
+        }, randomNumber(2000) + 50);
+      } else {
+        // if (!cells[get_key(x_inc, y_inc)].waiting) {
+        graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
+        if (graphics_type === 1) {
+          graphics.fillRect(x + 12, y + 12, x_step - 12, y_step - 12);
+        } else if (graphics_type === 2) {
+          graphics.fillRect(
+            x + puke_x,
+            y + puke_y,
+            x_step - puke_x,
+            y_step - puke_y
+          );
+        } else {
           graphics.beginPath();
           graphics.moveTo(x - 16, y);
           graphics.lineTo(x - 8, y + 14);
@@ -275,20 +334,8 @@ let splort = function(graphics) {
           graphics.lineTo(x - 8, y - 14);
           graphics.closePath();
           graphics.fill();
-          cells[get_key(new_x, new_y)].color = new_color;
-        }, randomNumber(2000) + 50);
+        }
       }
-
-      graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
-      graphics.beginPath();
-      graphics.moveTo(x - 16, y);
-      graphics.lineTo(x - 8, y + 14);
-      graphics.lineTo(x + 8, y + 14);
-      graphics.lineTo(x + 16, y);
-      graphics.lineTo(x + 8, y - 14);
-      graphics.lineTo(x - 8, y - 14);
-      graphics.closePath();
-      graphics.fill();
     }
   }
 };
@@ -364,8 +411,11 @@ window.onload = () => {
   );
   enclosedSplort = encloseSplort(splort, context);
   splortInterval = setInterval(enclosedSplort, 30);
-  regenInterval = setInterval(regen, 850);
-  clearBoardInterval = setInterval(clearBoard, 15000);
+  regenInterval = setInterval(
+    regen,
+    randomNumber(1000) + 200 + randomNumber(500)
+  );
+  clearBoardInterval = setInterval(clearBoard, randomNumber(25000) + 5000);
   setPalette(randomSelection(palettes));
   gen();
 };
