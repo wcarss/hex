@@ -415,7 +415,7 @@ window.onload = () => {
     regen,
     randomNumber(1000) + 200 + randomNumber(500)
   );
-  clearBoardInterval = setInterval(clearBoard, randomNumber(25000) + 5000);
+  clearBoardInterval = setInterval(clearBoard, randomNumber(25000) + 12000);
   setPalette(randomSelection(palettes));
   gen();
 };
