@@ -1,6 +1,6 @@
 import palettes from "./palette.js";
 
-let clicking = false;
+let clicking = true;
 let context = null;
 let brushColor1 = null;
 let brushColor2 = null;
@@ -8,7 +8,7 @@ let brushColor1Index = null;
 let brushColor2Index = null;
 let rotation = 0;
 let rotation_velocity =
-  Math.random() > 0.5 ? 0.2 * (Math.PI / 180) : -0.2 * (Math.PI / 180);
+  Math.random() > 0.5 ? 0.14 * (Math.PI / 180) : -0.14 * (Math.PI / 180);
 let rotation_min = Math.random() - Math.random() * 2;
 let rotation_max = Math.random() * 2 + 4 - Math.random();
 let x_skew = 0;
@@ -21,20 +21,41 @@ let y_skew_min = -0.3 + Math.random() * 0.15;
 let y_skew_max = 0.2 - Math.random() * 0.1;
 let zoom = 1;
 let zoom_velocity = Math.random() > 0.5 ? 0.0015 : -0.0015;
-let zoom_min = 0.75 + Math.random() * 0.5;
-let zoom_max = 2.0 - Math.random() * 1.5;
+let zoom_min = 0.75 + Math.random() * 0.2;
+let zoom_max = 1.7 - Math.random() * 0.5;
 let zoom_slowdown = 0.12;
 let zoom_change = 0;
-let new_graphics_type = null;
-let puke_x = 0;
-let puke_y = 0;
+let new_graphics_type = undefined;
+let x_step = 24;
+let y_step = 28;
+let puke_x = Math.random() * x_step * 2 + 4;
+let puke_y = Math.random() * y_step * 2 + 4;
+let circle_speeds = [
+  0.02,
+  0.02,
+  0.02,
+  0.05,
+  0.05,
+  0.1,
+  0.1,
+  0.1,
+  0.1,
+  0.1,
+  0.1,
+  0.1,
+  0.5,
+  1
+];
 let graphics_type = 0;
 // 0 - hex
 // 1 - squares
-// 2 - puke squares
+// 2 - clouds
+// 3 - circles
 
 let cells = {};
 let saved = {};
+let saved_count = 0;
+let saved_max = 300;
 
 let palette = null;
 let canvas = null;
@@ -45,20 +66,16 @@ let clearBoardInterval = null;
 let regenInterval = null;
 let rotated = false;
 
-let x_step = 24;
-let y_step = 28;
 let max = null;
 let min = null;
 let x_count = null;
 let y_count = null;
 
-let ondown = function() {
-  clicking = true;
-  brushRegen();
-};
+let ondown = function() {};
 
 let onup = function() {
-  clicking = false;
+  clicking = !clicking;
+  brushRegen();
 };
 
 let onmove = function(e, graphics, canvas) {
@@ -105,14 +122,19 @@ let onclick = function(event, graphics, canvas) {
   x = x_count / 2 + parseInt(Math.round(x / x_step));
   y = y_count / 2 + parseInt(Math.round(y / y_step));
 
-  cells[get_key(x, y - 1)].color = brushColor1;
   cells[get_key(x, y)].color = brushColor1;
-  cells[get_key(x + 1, y)].color = brushColor1;
-  cells[get_key(x + 1, y + 1)].color = brushColor1;
-  cells[get_key(x, y - 1)].color_index = brushColor1Index;
+  cells[get_key(x, y - 1)].color = brushColor1;
   cells[get_key(x, y)].color_index = brushColor1Index;
-  cells[get_key(x + 1, y)].color_index = brushColor1Index;
-  cells[get_key(x + 1, y + 1)].color_index = brushColor1Index;
+  cells[get_key(x, y - 1)].color_index = brushColor1Index;
+  // if (graphics_type !== 2) {
+  //
+  //   cells[get_key(x + 1, y)].color = brushColor1;
+  //   cells[get_key(x + 1, y + 1)].color = brushColor1;
+  //
+  //
+  //   cells[get_key(x + 1, y)].color_index = brushColor1Index;
+  //   cells[get_key(x + 1, y + 1)].color_index = brushColor1Index;
+  // }
 };
 
 let randomNumber = function(max) {
@@ -134,27 +156,28 @@ let get_key = function(a, b) {
   return `${a},${b}`;
 };
 
-let gen = function(refresh = false) {
+let gen = function(refresh = false, first = false) {
   let x_inc = 0;
   let y_inc = 0;
   if (refresh) {
     changePalettes();
+    brushRegen();
     let choice = Math.random();
     if (
-      (graphics_type === 0 && choice > 0.5) ||
-      (graphics_type === 1 && choice > 0.4) ||
-      (graphics_type === 2 && choice > 0.2)
+      (graphics_type === 0 && choice > 0.15) ||
+      (graphics_type === 1 && choice > 0.15) ||
+      (graphics_type === 2 && choice > 0.15) ||
+      (graphics_type === 3 && choice > 0.15)
     ) {
-      new_graphics_type = randomSelection([0, 0, 0, 0, 0, 0, 1, 1, 2]);
-      if (new_graphics_type === 2) {
-        puke_x = x_step - randomNumber(x_step);
-        puke_y = y_step - randomNumber(y_step);
-        zoom_out = true;
-      }
-      setTimeout(() => {
-        graphics_type = new_graphics_type;
-        new_graphics_type = null;
-      }, 1000);
+      new_graphics_type = randomSelection([0, 1, 2, 3]);
+      console.log("switching to type ", new_graphics_type);
+      setTimeout(
+        () => {
+          graphics_type = new_graphics_type;
+          new_graphics_type = undefined;
+        },
+        new_graphics_type === 1 ? 250 : 2000
+      );
     }
   }
   let palette = getPalette();
@@ -165,21 +188,43 @@ let gen = function(refresh = false) {
   for (x_inc = 0; x_inc <= x_count; x_inc++) {
     for (y_inc = 0; y_inc <= y_count; y_inc++) {
       let key = get_key(x_inc, y_inc);
-      if (Math.random() > 0.28) {
+      if (
+        (graphics_type === 2 || graphics_type === 3) &&
+        Math.random() > 0.28
+      ) {
         color_index = randomNumber(palette.length);
         color = palette[color_index];
       }
       if (!cells[key]) {
         cells[key] = {
-          color: default_color,
-          color_index: 1,
+          color,
+          color_index,
           x: x_inc,
-          y: y_inc
+          y: y_inc,
+          graphics_type,
+          circle_size: Math.random() * 8 + 6,
+          max_circle_size: randomSelection([
+            8,
+            10,
+            10,
+            12,
+            12,
+            14,
+            14,
+            14,
+            14,
+            14,
+            20
+          ]),
+          circle_speed: randomSelection(circle_speeds)
         };
       }
       if (refresh) {
         cells[key].color_index = cells[key].color_index % palette.length;
         cells[key].new_color = palette[cells[key].color_index];
+        if (new_graphics_type !== undefined) {
+          cells[key].new_graphics_type = new_graphics_type;
+        }
       }
     }
   }
@@ -210,6 +255,10 @@ let regen = function() {
       new_cell.color_index = cells[key].color_index % palette.length;
       new_cell.color = palette[new_cell.color_index];
     }
+    if (saved_count > saved_max) {
+      delete saved[key];
+      saved_count -= 1;
+    }
   }
   for (let i = 0; i < randomNumber(100) + 15; i++) {
     let x = randomNumber(x_count);
@@ -219,6 +268,7 @@ let regen = function() {
       cells[key].color_index = randomNumber(palette.length);
       cells[key].color = palette[cells[key].color_index];
       saved[key] = cells[key];
+      saved_count += 1;
     }
   }
 };
@@ -226,32 +276,37 @@ let regen = function() {
 let splort = function(graphics) {
   let x_inc = 0;
   let y_inc = 0;
-  let palette = getPalette();
 
+  if (graphics_type !== 2) {
+    let transform = graphics.getTransform();
+    graphics.setTransform(1, 0, 0, 1, 0, 0);
+    graphics.clearRect(0, 0, max, max);
+    graphics.setTransform(transform);
+  }
   graphics.translate(max, max);
 
-  rotation += rotation_velocity;
   if (rotation > rotation_max || rotation < rotation_min) {
     rotation_velocity *= -1;
-    rotation_max = randomNumber(2) + 4 - Math.random();
-    rotation_min = Math.random() - randomNumber(2);
+    rotation_max = Math.max(rotation, randomNumber(2) + 4 - Math.random());
+    rotation_min = Math.min(rotation, Math.random() - randomNumber(2));
   }
-  x_skew += x_skew_velocity;
-  y_skew += y_skew_velocity;
+  rotation += rotation_velocity;
   if (x_skew > x_skew_max || x_skew < x_skew_min) {
     x_skew_velocity *= -1;
-    x_skew_max = 0.28 - Math.random() * 0.1;
-    x_skew_min = -0.13 + Math.random() * 0.15;
+    x_skew_max = Math.max(x_skew, 0.28 - Math.random() * 0.1);
+    x_skew_min = Math.min(x_skew, -0.13 + Math.random() * 0.15);
   }
+  x_skew += x_skew_velocity;
   if (y_skew > y_skew_max || y_skew < y_skew_min) {
     y_skew_velocity *= -1;
-    y_skew_max = 0.17 - Math.random() * 0.1;
-    y_skew_min = -0.2 + Math.random() * 0.15;
+    y_skew_min = Math.min(y_skew, -0.2 + Math.random() * 0.15);
+    y_skew_max = Math.max(y_skew, 0.17 - Math.random() * 0.1);
   }
+  y_skew += y_skew_velocity;
   if (zoom > zoom_max || zoom < zoom_min) {
     zoom_velocity *= -1;
-    zoom_max = 2.2 - Math.random() * 1.5;
-    zoom_min = 0.65 + Math.random() * 0.5;
+    zoom_max = Math.max(zoom, 1.7 - Math.random() * 0.5);
+    zoom_min = Math.min(zoom, 0.75 + Math.random() * 0.2);
   }
   if (zoom > zoom_max - zoom_slowdown || zoom < zoom_min + zoom_slowdown) {
     zoom_change = zoom_velocity * 0.5;
@@ -279,26 +334,43 @@ let splort = function(graphics) {
         y -= 14;
       }
       if (cells[get_key(x_inc, y_inc)].new_color) {
-        let cell = cells[get_key(x_inc, y_inc)];
-        let new_color = cell.new_color;
         let new_x = x_inc;
         let new_y = y_inc;
-        delete cells[get_key(new_x, new_y)].new_color;
-        cells[get_key(new_x, new_y)].waiting = true;
+        let new_color = cells[get_key(new_x, new_y)].new_color;
         setTimeout(() => {
           graphics.fillStyle = new_color;
-          let local_graphics_type =
-            new_graphics_type !== null ? new_graphics_type : graphics_type;
-          if (local_graphics_type === 1) {
-            graphics.fillRect(x + 12, y + 12, x_step - 12, y_step - 12);
-          } else if (local_graphics_type === 2) {
-            graphics.fillRect(
-              x + puke_x,
-              y + puke_y,
-              x_step - puke_x,
-              y_step - puke_y
+          let tcell = cells[get_key(new_x, new_y)];
+          tcell.graphics_type =
+            tcell.new_graphics_type !== undefined
+              ? tcell.new_graphics_type
+              : tcell.graphics_type;
+          delete tcell.new_graphics_type;
+          if (tcell.graphics_type === 1) {
+            graphics.fillRect(x, y, x_step, y_step);
+          } else if (tcell.graphics_type === 3) {
+            if (!tcell.circle_size) {
+              tcell.circle_size = Math.random() * 8 + 6;
+            }
+            graphics.beginPath();
+            graphics.arc(
+              x,
+              y,
+              tcell.circle_size /*Math.random()*8+6*/,
+              0,
+              Math.PI * 2
             );
-          } else {
+            graphics.fill();
+          } else if (tcell.graphics_type === 2) {
+            graphics.fillRect(
+              x + Math.random() * x_step + 4,
+              y + Math.random() * y_step + 4,
+              x_step - Math.random() * x_step + 4,
+              y_step - Math.random() * y_step + 4
+            );
+          } else if (tcell.graphics_type === 0) {
+            if (tcell.graphics_type !== graphics_type) {
+              y -= 14;
+            }
             graphics.beginPath();
             graphics.moveTo(x - 16, y);
             graphics.lineTo(x - 8, y + 14);
@@ -308,33 +380,48 @@ let splort = function(graphics) {
             graphics.lineTo(x - 8, y - 14);
             graphics.closePath();
             graphics.fill();
+          } else {
+            console.log(
+              "tcell graphics type strangeness: ",
+              tcell.graphics_type
+            );
           }
-          cells[get_key(new_x, new_y)].color = new_color;
-          delete cells[get_key(new_x, new_y)].waiting;
+          tcell.color = new_color;
         }, randomNumber(2000) + 50);
+        cells[get_key(new_x, new_y)].new_color = null;
+      }
+      //graphics.strokeStyle = loop_cell.color;
+      graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
+      if (cells[get_key(x_inc, y_inc)].graphics_type === 1) {
+        graphics.fillRect(x, y, x_step, y_step);
+      } else if (cells[get_key(x_inc, y_inc)].graphics_type === 3) {
+        let circle_size = cells[get_key(x_inc, y_inc)].circle_size;
+        circle_size += cells[get_key(x_inc, y_inc)].circle_speed;
+        if (circle_size > cells[get_key(x_inc, y_inc)].max_circle_size)
+          circle_size = 6;
+        cells[get_key(x_inc, y_inc)].circle_size = circle_size;
+        graphics.beginPath();
+        graphics.arc(x, y, circle_size /*Math.random()*8+6*/, 0, Math.PI * 2);
+        graphics.fill();
+      } else if (cells[get_key(x_inc, y_inc)].graphics_type === 2) {
+        graphics.fillRect(
+          x + Math.random() * x_step + 4,
+          y + Math.random() * y_step + 4,
+          x_step - Math.random() * x_step + 4,
+          y_step - Math.random() * y_step + 4
+        );
+      } else if (cells[get_key(x_inc, y_inc)].graphics_type === 0) {
+        graphics.beginPath();
+        graphics.moveTo(x - 16, y);
+        graphics.lineTo(x - 8, y + 14);
+        graphics.lineTo(x + 8, y + 14);
+        graphics.lineTo(x + 16, y);
+        graphics.lineTo(x + 8, y - 14);
+        graphics.lineTo(x - 8, y - 14);
+        graphics.closePath();
+        graphics.fill();
       } else {
-        // if (!cells[get_key(x_inc, y_inc)].waiting) {
-        graphics.fillStyle = cells[get_key(x_inc, y_inc)].color;
-        if (graphics_type === 1) {
-          graphics.fillRect(x + 12, y + 12, x_step - 12, y_step - 12);
-        } else if (graphics_type === 2) {
-          graphics.fillRect(
-            x + puke_x,
-            y + puke_y,
-            x_step - puke_x,
-            y_step - puke_y
-          );
-        } else {
-          graphics.beginPath();
-          graphics.moveTo(x - 16, y);
-          graphics.lineTo(x - 8, y + 14);
-          graphics.lineTo(x + 8, y + 14);
-          graphics.lineTo(x + 16, y);
-          graphics.lineTo(x + 8, y - 14);
-          graphics.lineTo(x - 8, y - 14);
-          graphics.closePath();
-          graphics.fill();
-        }
+        console.log("tcell graphics type strangeness: ", tcell.graphics_type);
       }
     }
   }
@@ -415,9 +502,10 @@ window.onload = () => {
     regen,
     randomNumber(1000) + 200 + randomNumber(500)
   );
-  clearBoardInterval = setInterval(clearBoard, randomNumber(25000) + 12000);
+  clearBoardInterval = setInterval(clearBoard, randomNumber(15000) + 15000);
   setPalette(randomSelection(palettes));
   gen();
+  brushRegen();
 };
 
 window.addEventListener("resize", function() {
