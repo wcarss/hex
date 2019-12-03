@@ -28,27 +28,27 @@ let zoom_change = 0;
 let new_graphics_type = undefined;
 let size_spec = Math.random() * 3 + 1;
 if (Math.random() > 0.94 || navigator.maxTouchPoints !== 0) {
-  size_spec = Math.random() * 35 + 2;
+  size_spec = Math.random() * 30 + 5;
 }
 let x_step = 24 * size_spec;
 let y_step = 28 * size_spec;
 let puke_x = Math.random() * x_step * 2 + 4;
 let puke_y = Math.random() * y_step * 2 + 4;
 let circle_speeds = [
-  0.02,
-  0.02,
-  0.02,
-  0.05,
-  0.05,
-  0.1,
-  0.1,
-  0.1,
-  0.1,
-  0.1,
-  0.1,
-  0.1,
-  0.5,
-  1
+  0.02 * size_spec,
+  0.02 * size_spec,
+  0.02 * size_spec,
+  0.05 * size_spec,
+  0.05 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.1 * size_spec,
+  0.5 * size_spec,
+  1 * size_spec
 ];
 let graphics_type = 0;
 // 0 - hex
