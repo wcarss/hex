@@ -26,8 +26,12 @@ let zoom_max = 1.7 - Math.random() * 0.5;
 let zoom_slowdown = 0.12;
 let zoom_change = 0;
 let new_graphics_type = undefined;
-let x_step = 24;
-let y_step = 28;
+let size_spec = Math.random() * 3 + 1;
+if (Math.random() > 0.92) {
+  size_spec = Math.random() * 35 + 1.5;
+}
+let x_step = 24 * size_spec;
+let y_step = 28 * size_spec;
 let puke_x = Math.random() * x_step * 2 + 4;
 let puke_y = Math.random() * y_step * 2 + 4;
 let circle_speeds = [
@@ -202,19 +206,19 @@ let gen = function(refresh = false, first = false) {
           x: x_inc,
           y: y_inc,
           graphics_type,
-          circle_size: Math.random() * 8 + 6,
+          circle_size: Math.random() * 8 * size_spec + 6,
           max_circle_size: randomSelection([
-            8,
-            10,
-            10,
-            12,
-            12,
-            14,
-            14,
-            14,
-            14,
-            14,
-            20
+            8 * size_spec,
+            10 * size_spec,
+            10 * size_spec,
+            12 * size_spec,
+            12 * size_spec,
+            14 * size_spec,
+            14 * size_spec,
+            14 * size_spec,
+            14 * size_spec,
+            14 * size_spec,
+            20 * size_spec
           ]),
           circle_speed: randomSelection(circle_speeds)
         };
@@ -331,7 +335,7 @@ let splort = function(graphics) {
       let x = x_inc * x_step;
       let y = y_inc * y_step;
       if (graphics_type === 0 && x_inc % 2) {
-        y -= 14;
+        y -= 14 * size_spec;
       }
       if (cells[get_key(x_inc, y_inc)].new_color) {
         let new_x = x_inc;
@@ -361,23 +365,30 @@ let splort = function(graphics) {
             );
             graphics.fill();
           } else if (tcell.graphics_type === 2) {
+            graphics.save();
+            if (size_spec > 8) {
+              graphics.globalAlpha = 0.6;
+            } else {
+              graphics.globalAlpha = 0.9;
+            }
             graphics.fillRect(
               x + Math.random() * x_step + 4,
               y + Math.random() * y_step + 4,
               x_step - Math.random() * x_step + 4,
               y_step - Math.random() * y_step + 4
             );
+            graphics.restore();
           } else if (tcell.graphics_type === 0) {
             if (tcell.graphics_type !== graphics_type) {
               y -= 14;
             }
             graphics.beginPath();
-            graphics.moveTo(x - 16, y);
-            graphics.lineTo(x - 8, y + 14);
-            graphics.lineTo(x + 8, y + 14);
-            graphics.lineTo(x + 16, y);
-            graphics.lineTo(x + 8, y - 14);
-            graphics.lineTo(x - 8, y - 14);
+            graphics.moveTo(x - 16 * size_spec, y);
+            graphics.lineTo(x - 8 * size_spec, y + 14 * size_spec);
+            graphics.lineTo(x + 8 * size_spec, y + 14 * size_spec);
+            graphics.lineTo(x + 16 * size_spec, y);
+            graphics.lineTo(x + 8 * size_spec, y - 14 * size_spec);
+            graphics.lineTo(x - 8 * size_spec, y - 14 * size_spec);
             graphics.closePath();
             graphics.fill();
           } else {
@@ -404,20 +415,28 @@ let splort = function(graphics) {
         graphics.arc(x, y, circle_size /*Math.random()*8+6*/, 0, Math.PI * 2);
         graphics.fill();
       } else if (cells[get_key(x_inc, y_inc)].graphics_type === 2) {
+        graphics.save();
+        //graphics.globalCompositeOperation = "destination-out";
+        if (size_spec > 8) {
+          graphics.globalAlpha = 0.6;
+        } else {
+          graphics.globalAlpha = 0.9;
+        }
         graphics.fillRect(
           x + Math.random() * x_step + 4,
           y + Math.random() * y_step + 4,
           x_step - Math.random() * x_step + 4,
           y_step - Math.random() * y_step + 4
         );
+        graphics.restore();
       } else if (cells[get_key(x_inc, y_inc)].graphics_type === 0) {
         graphics.beginPath();
-        graphics.moveTo(x - 16, y);
-        graphics.lineTo(x - 8, y + 14);
-        graphics.lineTo(x + 8, y + 14);
-        graphics.lineTo(x + 16, y);
-        graphics.lineTo(x + 8, y - 14);
-        graphics.lineTo(x - 8, y - 14);
+        graphics.moveTo(x - 16 * size_spec, y);
+        graphics.lineTo(x - 8 * size_spec, y + 14 * size_spec);
+        graphics.lineTo(x + 8 * size_spec, y + 14 * size_spec);
+        graphics.lineTo(x + 16 * size_spec, y);
+        graphics.lineTo(x + 8 * size_spec, y - 14 * size_spec);
+        graphics.lineTo(x - 8 * size_spec, y - 14 * size_spec);
         graphics.closePath();
         graphics.fill();
       } else {
