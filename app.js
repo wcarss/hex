@@ -28,7 +28,7 @@ let zoom_change = 0;
 let new_graphics_type = undefined;
 let size_spec = Math.random() * 3 + 1;
 if (Math.random() > 0.94 || navigator.maxTouchPoints !== 0) {
-  size_spec = Math.random() * 30 + 5;
+  size_spec = Math.random() * 20 + 3;
 }
 let x_step = 24 * size_spec;
 let y_step = 28 * size_spec;
